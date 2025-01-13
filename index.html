@@ -3,10 +3,121 @@
 <head>
     <title>Dome Telegram MiniApp</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script>
+
+    <link rel="stylesheet" href="https://unpkg.com/mvp.css">
+
+    <style>
+        button {
+            margin: 10px;
+        }
+    </style>
 </head>
 <body>
 
 <h1>Dome Telegram MiniApp</h1>
+
+<div id="connect-to-wallet">
+    <h2>Connect to Wallet</h2>
+
+    <div id="wallet-connector-container"></div>
+
+    <div>Status: <span id="connect-to-wallet-status">loading...</span></div>
+</div>
+
+<div>
+    <button id="get-connected-wallet">Get Connected Wallet</button>
+
+    <div id="connected-wallet-info">
+        <div>Name: <div id="name"></div></div>
+        <div>Address: <div id="address"></div></div>
+    </div>
+</div>
+
+<script>
+    const { TonConnect, isWalletInfoRemote } = TonConnectSDK
+
+    let currentConnectedWallet = null
+    let connector
+
+    let connectToWalletStatus = null
+
+    async function main() {
+        connector = new TonConnect({
+            manifestUrl: 'https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json'
+        });
+
+        connector.restoreConnection()
+            .then(data => {
+                console.info('Connected', data)
+            })
+
+        connectToWalletStatus.innerText = 'ready'
+
+        let walletsList = await connector.getWallets()
+        walletsList = walletsList.filter(isWalletInfoRemote);
+
+        const walletConnectorContainer = document.getElementById('wallet-connector-container');
+
+        walletConnectorContainer.innerHTML = ''; // try to clear any orphan element
+        walletsList.forEach((wallet) => {
+            const walletConnectButton = buildWalletConnectButton(wallet, (walletInfo) => {
+
+                connectToWalletStatus.innerText = 'connecting...'
+
+                return connector.connect({
+                    universalLink: walletInfo.universalLink,
+                    bridgeUrl: walletInfo.bridgeUrl
+                }).then((connectionInfo) => {
+                    connectToWalletStatus.innerText = 'completed'
+                    console.info('Connected', connectionInfo)
+                }).catch((err) => {
+                    console.error('Connecting Error', err)
+                });
+            });
+            walletConnectorContainer.appendChild(walletConnectButton);
+        })
+    }
+
+    function buildWalletConnectButton(wallet, connectionCallback) {
+
+        const button = document.createElement('button')
+
+        button.id = wallet.name.toLowerCase().replace(' ', '-')
+        button.innerHTML = wallet.name
+
+        button.addEventListener('click', () => {
+            console.info(`Connecting with (${wallet.name})`)
+            connectionCallback(wallet)
+                .then((data) => {
+                    console.info('Connected:', { data })
+                    currentConnectedWallet = wallet.name
+                })
+        })
+
+        return button
+    }
+
+    function getDetails() {
+        const getConnectedWalletButton = document.getElementById('get-connected-wallet')
+
+        const info = document.querySelector('#connected-wallet-info')[0]
+        console.info(connector)
+
+        getConnectedWalletButton.click(() => {
+            connector.wallet()
+                .then((walletInfo) => {
+                    info.innerHTML = walletInfo
+                })
+        })
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        connectToWalletStatus = document.getElementById('connect-to-wallet-status')
+        main()
+        getDetails()
+    })
+</script>
 
 </body>
 </html>
