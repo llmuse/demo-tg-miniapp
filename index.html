@@ -68,12 +68,7 @@
                 return connector.connect({
                     universalLink: walletInfo.universalLink,
                     bridgeUrl: walletInfo.bridgeUrl
-                }).then((connectionInfo) => {
-                    connectToWalletStatus.innerText = 'completed'
-                    console.info('Connected', connectionInfo)
-                }).catch((err) => {
-                    console.error('Connecting Error', err)
-                });
+                })
             });
             walletConnectorContainer.appendChild(walletConnectButton);
         })
@@ -89,10 +84,6 @@
         button.addEventListener('click', () => {
             console.info(`Connecting with (${wallet.name})`)
             connectionCallback(wallet)
-                .then((data) => {
-                    console.info('Connected:', { data })
-                    currentConnectedWallet = wallet.name
-                })
         })
 
         return button
