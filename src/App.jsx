@@ -97,6 +97,8 @@ function App() {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%,-50%)',
+          maxWidth: '100vw',
+          minWidth: 'fit-content',
           width: 'fit-content',
           minHeight: 'fit-content',
           backgroundColor: '#242424',
